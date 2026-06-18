@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💬 Real-time Chat</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  body {
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* LOGIN */
+  .login-screen {
+    background: #fff;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .login-screen h1 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 2rem;
+  }
+
+  .login-screen p {
+    color: #777;
+    margin-bottom: 25px;
+  }
+
+  .login-screen input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    transition: border 0.3s;
+  }
+
+  .login-screen input:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .login-screen button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .login-screen button:hover {
+    transform: translateY(-2px);
+  }
+
+  .emoji-picker {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .emoji-picker span {
+    font-size: 2rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .emoji-picker span:hover {
+    transform: scale(1.3);
+  }
+
+  .emoji-picker span.active {
+    transform: scale(1.3);
+    border: 2px solid #667eea;
+    border-radius: 50%;
+    padding: 2px;
+  }
+
+  /* CHAT */
+  .chat-container {
+    width: 100%;
+    max-width: 800px;
+    height: 90vh;
+    max-height: 700px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-container.active {
+    display: flex;
+  }
+
+  .chat-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-avatar {
+    font-size: 2rem;
+    background: rgba(255,255,255,0.2);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-info h3 {
+    font-size: 1rem;
+  }
+
+  .user-info small {
+    opacity: 0.8;
+    font-size: 0.75rem;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .header-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.2s;
+  }
+
+  .header-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  /* MESSAGES */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .message {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 75%;
+    animation: msgIn 0.3s ease;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.own {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message-avatar {
+    font-size: 1.8rem;
+    width: 36px;
+    height: 36px;
+    background: #e0e0e0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .message-content {
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    word-wrap: break-word;
+  }
+
+  .message.own .message-content {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+  }
+
+  .message-author {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #667eea;
+    margin-bottom: 3px;
+  }
+
+  .message.own .message-author {
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  .message-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .message-time {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 3px;
+    text-align: right;
+  }
+
+  .system-message {
+    align-self: center;
+    background: rgba(0,0,0,0.05);
+    color: #777;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+
+  /* INPUT */
+  .chat-input {
+    padding: 16px;
+    background: #fff;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .chat-input input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 0.95rem;
+    transition: border 0.3s;
+  }
+
+  .chat-input input:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  .send-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+
+  .send-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* TYPING INDICATOR */
+  .typing {
+    padding: 0 20px 8px;
+    color: #999;
+    font-size: 0.8rem;
+    font-style: italic;
+    background: #f8f9fa;
+    height: 24px;
+  }
+
+  @media (max-width: 600px) {
+    .chat-container { height: 100vh; max-height: none; border-radius: 0; }
+    .message { max-width: 85%; }
+  }
+
+  /* SCROLLBAR */
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <h1>💬 Chat'ga kirish</h1>
+  <p>Ismingizni kiriting va suhbatni boshlang!</p>
+  
+  <div class="emoji-picker" id="emojiPicker">
+    <span data-emoji="😀">😀</span>
+    <span data-emoji="😎">😎</span>
+    <span data-emoji="🤖">🤖</span>
+    <span data-emoji="🦊">🦊</span>
+    <span data-emoji="🐱">🐱</span>
+    <span data-emoji="🦁">🦁</span>
+    <span data-emoji="🐼">🐼</span>
+    <span data-emoji="🦄">🦄</span>
+  </div>
+  
+  <input type="text" id="usernameInput" placeholder="Ismingizni kiriting..." maxlength="20">
+  <button id="joinBtn">Chat'ga kirish 🚀</button>
+</div>
+
+<!-- CHAT -->
+<div class="chat-container" id="chatContainer">
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="user-avatar" id="userAvatar">😀</div>
+      <div class="user-info">
+        <h3 id="userName">Foydalanuvchi</h3>
+        <small><span class="status-dot"></span>online</small>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="clearBtn" title="Xabarlarni tozalash">🗑️</button>
+      <button class="header-btn" id="logoutBtn" title="Chiqish">🚪</button>
+    </div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+  <div class="typing" id="typingIndicator"></div>
+
+  <div class="chat-input">
+    <input type="text" id="messageInput" placeholder="Xabar yozing..." maxlength="500">
+    <button class="send-btn" id="sendBtn">➤</button>
+  </div>
+</div>
+
+<script>
+  // ===== ELEMENTLAR =====
+  const loginScreen = document.getElementById('loginScreen');
+  const chatContainer = document.getElementById('chatContainer');
+  const usernameInput = document.getElementById('usernameInput');
+  const joinBtn = document.getElementById('joinBtn');
+  const emojiPicker = document.getElementById('emojiPicker');
+  const userAvatar = document.getElementById('userAvatar');
+  const userName = document.getElementById('userName');
+  const messages = document.getElementById('messages');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  let currentUser = null;
+  let selectedEmoji = '😀';
+  let typingTimeout = null;
+
+  // ===== EMOJI TANLASH =====
+  emojiPicker.addEventListener('click', (e) => {
+    if (e.target.dataset.emoji) {
+      selectedEmoji = e.target.dataset.emoji;
+      document.querySelectorAll('.emoji-picker span').forEach(el => el.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+  });
+
+  // ===== LOGIN =====
+  joinBtn.addEventListener('click', joinChat);
+  usernameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') joinChat();
+  });
+
+  function joinChat() {
+    const name = usernameInput.value.trim();
+    if (!name) {
+      alert('Iltimos, ismingizni kiriting!');
+      return;
+    }
+    currentUser = { name, emoji: selectedEmoji, id: Date.now() };
+    userAvatar.textContent = selectedEmoji;
+    userName.textContent = name;
+    
+    loginScreen.style.display = 'none';
+    chatContainer.classList.add('active');
+    
+    saveUser();
+    loadMessages();
+    addSystemMessage(`${selectedEmoji} ${name} chat'ga qo'shildi`);
+    messageInput.focus();
+  }
+
+  // ===== USER SAQLASH =====
+  function saveUser() {
+    localStorage.setItem('chatUser', JSON.stringify(currentUser));
+  }
+
+  function loadUser() {
+    const saved = localStorage.getItem('chatUser');
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      userAvatar.textContent = currentUser.emoji;
+      userName.textContent = currentUser.name;
+      loginScreen.style.display = 'none';
+      chatContainer.classList.add('active');
+      loadMessages();
+      return true;
+    }
+    return false;
+  }
+
+  // ===== XABARLAR =====
+  function getMessages() {
+    return JSON.parse(localStorage.getItem('chatMessages') || '[]');
+  }
+
+  function saveMessages(msgs) {
+    localStorage.setItem('chatMessages', JSON.stringify(msgs));
+  }
+
+  function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    const msg = {
+      id: Date.now(),
+      author: currentUser.name,
+      emoji: currentUser.emoji,
+      text: text,
+      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      own: true
+    };
+
+    const all = getMessages();
+    all.push(msg);
+    saveMessages(all);
+    
+    messageInput.value = '';
+    renderMessages();
+    
+    // Bot javob (demo)
+    setTimeout(() => botReply(text), 1000 + Math.random() * 2000);
+  }
+
+  function botReply(userText) {
+    const replies = {
+      'salom': ['Salom! Qalaysiz? 😊', 'Assalomu alaykum! 👋', 'Hey, xush kelibsiz! 🎉'],
+      'qalaysan': ['Yaxshi, rahmat! Siz-chi? 😊', 'Ajoyib, kod yozayapman! 💻', 'Zoʻr, yangi loyihalar ustida ishlayapman 🚀'],
+      'rahmat': ['Arzimaydi! 😊', 'Marhamat! 🤝', 'Doimo yordam beraman! ✨'],
+      'kimsan': ['Men oddiy botman 🤖', 'Sizning virtual yordamchingiz! 💫'],
+      'nima qilayapsan': ['Kod yozayapman 💻', 'Siz bilan suhbatlashayapman 😊', 'Yangi gʻoyalar ustida ishlayapman 💡']
+    };
+
+    const lower = userText.toLowerCase();
+    let reply = null;
+    
+    for (const key in replies) {
+      if (lower.includes(key)) {
+        reply = replies[key][Math.floor(Math.random() * replies[key].length)];
+        break;
+      }
+    }
+    
+    if (!reply) {
+      const randomReplies = [
+        'Qiziqarli! Davom eting... 🤔',
+        'Tushundim! ✨',
+        'Zoʻr fikr! 💡',
+        'Rahmat! 😊',
+        'Aytgancha, haqiqatan ham! 🚀',
+        'Yaxshi savol! 💭'
+      ];
+      reply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    }
+
+    const botMsg = {
+      id: Date.now(),
+      author: 'Bot',
+      emoji: '🤖',
+      text: reply,
+      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }),
+      own: false
+    };
+
+    const all = getMessages();
+    all.push(botMsg);
+    saveMessages(all);
+    renderMessages();
+  }
+
+  function addSystemMessage(text) {
+    const sysMsg = {
+      id: Date.now(),
+      system: true,
+      text: text,
+      time: new Date().toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
+    };
+    const all = getMessages();
+    all.push(sysMsg);
+    saveMessages(all);
+    renderMessages();
+  }
+
+  function renderMessages() {
+    const all = getMessages();
+    messages.innerHTML = '';
+    
+    all.forEach(msg => {
+      if (msg.system) {
+        const div = document.createElement('div');
+        div.className = 'system-message';
+        div.textContent = msg.text;
+        messages.appendChild(div);
+      } else {
+        const div = document.createElement('div');
+        div.className = 'message' + (msg.author === currentUser?.name ? ' own' : '');
+        div.innerHTML = `
+          <div class="message-avatar">${msg.emoji}</div>
+          <div class="message-content">
+            <div class="message-author">${msg.author}</div>
+            <div class="message-text">${escapeHtml(msg.text)}</div>
+            <div class="message-time">${msg.time}</div>
+          </div>
+        `;
+        messages.appendChild(div);
+      }
+    });
+    
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function loadMessages() {
+    renderMessages();
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ===== STORAGE EVENT (boshqa tablar bilan sinxron) =====
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'chatMessages') {
+      renderMessages();
+      const last = getMessages().slice(-1)[0];
+      if (last && last.author !== currentUser?.name) {
+        typingIndicator.textContent = `${last.emoji} ${last.author} xabar yozdi...`;
+        setTimeout(() => typingIndicator.textContent = '', 3000);
+      }
+    }
+  });
+
+  // ===== EVENTS =====
+  sendBtn.addEventListener('click', sendMessage);
+  messageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  messageInput.addEventListener('input', () => {
+    if (currentUser) {
+      typingIndicator.textContent = `${currentUser.emoji} ${currentUser.name} yozmoqda...`;
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => typingIndicator.textContent = '', 2000);
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    if (confirm('Barcha xabarlar oʻchirilsinmi?')) {
+      localStorage.removeItem('chatMessages');
+      renderMessages();
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    if (confirm('Chat'dan chiqmoqchimisiz?')) {
+      localStorage.removeItem('chatUser');
+      location.reload();
+    }
+  });
+
+  // ===== AUTO-LOAD =====
+  if (!loadUser()) {
+    document.querySelector('.emoji-picker span').classList.add('active');
+  }
+</script>
+
+</body>
+</html>
